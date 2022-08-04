@@ -3,11 +3,6 @@
 #include <pitches.h>
 #include <LowPower.h>
 
-#if CONFIG_FREERTOS_UNICORE
-#define ARDUINO_RUNNING_CORE 0
-#else
-#define ARDUINO_RUNNING_CORE 1
-#endif
 #define DS_PIN 9
 #define SHIFT_PIN 2
 #define LATCH_PIN 3
@@ -22,7 +17,7 @@
 #define BEEPER 16
 #define CHANNEL 8
 #define MAX_TOOTH_COUNT 128
-#define MAX_ALARM_COUNT 32
+#define MAX_ALARM_COUNT 8
 
 #define TIMING_MODE 1
 #define ALARM_MODE 2
@@ -35,19 +30,19 @@ typedef struct
 } Note;
 
 Note charge[] = {
- { NOTE_G5, 1}, 
- { NOTE_C6, 1}, 
- { NOTE_E6, 1}, 
- { NOTE_G6, 1},
- { 0, 2}, 
- { NOTE_E6, 1}, 
- { NOTE_G6, 3},
- '\0'
-  };
-  Note buck[] = {
-      {NOTE_C7, 1},
-      {NOTE_B6, 1},
-      {NOTE_G6, 1}, '\0'};
+    {NOTE_G5, 1},
+    {NOTE_C6, 1},
+    {NOTE_E6, 1},
+    {NOTE_G6, 1},
+    {0, 2},
+    {NOTE_E6, 1},
+    {NOTE_G6, 3},
+    '\0'};
+Note buck[] = {
+    {NOTE_C7, 1},
+    {NOTE_B6, 1},
+    {NOTE_G6, 1},
+    '\0'};
 TM1637Display display(LED_CLOCK, LED_DATA);
 
 int toothCount = 0, alarmCount = 0;
@@ -75,24 +70,20 @@ void arpeggio(Note *notes, int tempo, int lengthOfSong, bool doLights)
   while (i <= lengthOfSong)
   {
     Note tempNote = notes[i];
-    
-    tone(BEEPER, tempNote.tone, tempo*tempNote.duration);
-    if(doLights) {
-    digitalWrite(LATCH_PIN, LOW);
-    shiftOut(DS_PIN, SHIFT_PIN, LSBFIRST, i);
-    digitalWrite(LATCH_PIN, HIGH);
 
+    tone(BEEPER, tempNote.tone, tempo * tempNote.duration);
+    if (doLights)
+    {
+      digitalWrite(LATCH_PIN, LOW);
+      shiftOut(DS_PIN, SHIFT_PIN, LSBFIRST, i);
+      digitalWrite(LATCH_PIN, HIGH);
     }
     i++;
     delay(tempo * tempNote.duration);
-    
   }
   noTone(BEEPER);
-  Serial.println("got to end of song");
   return;
 }
-
-
 
 void changeMode(int mode)
 {
@@ -123,17 +114,16 @@ void toothTimer()
     const bool isQuadrantChange = toothCount == 0 || toothCount == 32 || toothCount == 64 || toothCount == 96;
     if (isQuadrantChange)
     {
-      //  int arr[] = { NOTE_D6, NOTE_F6, NOTE_G6, NOTE_B6, '\0' };
-      //  arpeggio(arr, 200);
-       arpeggio(buck, 75, 3, false);
+      arpeggio(buck, 75, 3, false);
       digitalWrite(quadrantPins[toothCount / 32], HIGH);
-      if(toothCount == 0) {
+      if (toothCount == 0)
+      {
         delay(150);
-         arpeggio(buck, 75, 3, false);
+        arpeggio(buck, 75, 3, false);
       }
     }
     display.showNumberDec(MAX_TOOTH_COUNT - toothCount);
-    // Serial.println("showing number");
+
     if (toothCount == MAX_TOOTH_COUNT)
     {
       changeMode(ALARM_MODE);
@@ -178,10 +168,8 @@ void setup()
 
   // put your setup code here, to run once:
   Serial.begin(115200);
-  delay(1000);
-  display.setBrightness(0x09);
-  Serial.println(currentMode);
-  Serial.println("in setup");
+  delay(300);
+  display.setBrightness(0x0B);
   // All segments on
   display.setSegments(data);
 
