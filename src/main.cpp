@@ -55,6 +55,8 @@ const uint8_t SEG_DONE[] = {
 };
 const uint8_t data[] = {0xff, 0xff, 0xff, 0xff};
 const uint8_t blank[] = {0x00, 0x00, 0x00, 0x00};
+void writeLED(int value);
+
 const int quadrantPins[] = {QUADRANT_1, QUADRANT_2, QUADRANT_3, QUADRANT_4};
 // struct Button
 // {
@@ -74,15 +76,20 @@ void arpeggio(Note *notes, int tempo, int lengthOfSong, bool doLights)
     tone(BEEPER, tempNote.tone, tempo * tempNote.duration);
     if (doLights)
     {
-      digitalWrite(LATCH_PIN, LOW);
-      shiftOut(DS_PIN, SHIFT_PIN, LSBFIRST, i);
-      digitalWrite(LATCH_PIN, HIGH);
+      writeLED(i);
     }
     i++;
     delay(tempo * tempNote.duration);
   }
   noTone(BEEPER);
   return;
+}
+
+void writeLED(int value)
+{
+  digitalWrite(LATCH_PIN, LOW);
+  shiftOut(DS_PIN, SHIFT_PIN, LSBFIRST, value);
+  digitalWrite(LATCH_PIN, HIGH);
 }
 
 void changeMode(int mode)
@@ -95,7 +102,29 @@ void changeMode(int mode)
   }
   currentMode = mode;
 }
-
+bool isQuadrantChange(int num) {
+    return num == 0 || num == 32 || num == 64 || num == 96;
+}
+void doKitt() {
+digitalWrite(quadrantPins[0], HIGH);
+  digitalWrite(quadrantPins[1], HIGH);
+  digitalWrite(quadrantPins[2], HIGH);
+   digitalWrite(quadrantPins[3], HIGH);
+  for(int i = 2; i <= 128; i *=2) {
+    writeLED(i-1);
+    if(isQuadrantChange(i/2)) {
+      digitalWrite(quadrantPins[i / 32], HIGH);
+    }
+    delay(100);
+  }
+  for(int i = 2; i <=128; i*= 2) {
+    writeLED(128 - i );
+    delay(100);
+  }
+  digitalWrite(quadrantPins[1], LOW);
+  digitalWrite(quadrantPins[2], LOW);
+  digitalWrite(quadrantPins[3], LOW);
+}
 /* void isr(void)
 {
   Serial.println("key press");
@@ -106,13 +135,9 @@ void toothTimer()
 {
   if (currentMode == TIMING_MODE)
   {
-    int thisValue = toothCount;
-    digitalWrite(LATCH_PIN, LOW);
-    shiftOut(DS_PIN, SHIFT_PIN, LSBFIRST, thisValue);
-    digitalWrite(LATCH_PIN, HIGH);
+    writeLED(toothCount);
 
-    const bool isQuadrantChange = toothCount == 0 || toothCount == 32 || toothCount == 64 || toothCount == 96;
-    if (isQuadrantChange)
+    if (isQuadrantChange(toothCount))
     {
       arpeggio(buck, 75, 3, false);
       digitalWrite(quadrantPins[toothCount / 32], HIGH);
@@ -129,7 +154,7 @@ void toothTimer()
       changeMode(ALARM_MODE);
     }
     toothCount++;
-    delay(isQuadrantChange ? 850 : 1000);
+    delay(isQuadrantChange(toothCount) ? 850 : 1000);
   }
   if (currentMode == ALARM_MODE)
   {
@@ -184,8 +209,7 @@ void setup()
   pinMode(LED_BUILTIN, OUTPUT);
   digitalWrite(LED_BUILTIN, LOW);
   digitalWrite(BEEPER, LOW);
-
-  delay(500);
+  doKitt();
   // attachInterrupt(digitalPinToInterrupt(RESET_PIN), isr, FALLING);
   // resetButton.numberKeyPresses = 0;
   // delay(1000);
