@@ -17,7 +17,7 @@
 #define BEEPER 16
 #define CHANNEL 8
 #define MAX_TOOTH_COUNT 128
-#define MAX_ALARM_COUNT 8
+#define MAX_ALARM_COUNT 30
 
 #define TIMING_MODE 1
 #define ALARM_MODE 2
@@ -124,6 +124,8 @@ digitalWrite(quadrantPins[0], HIGH);
   digitalWrite(quadrantPins[1], LOW);
   digitalWrite(quadrantPins[2], LOW);
   digitalWrite(quadrantPins[3], LOW);
+      digitalWrite(LED_BUILTIN, LOW);
+
 }
 /* void isr(void)
 {
@@ -181,9 +183,7 @@ void toothTimer()
 
       digitalWrite(quadrantPins[i], LOW);
     }
-
-    digitalWrite(LED_BUILTIN, LOW);
-    //  LowPower.powerDown(SLEEP_FOREVER, ADC_OFF, BOD_OFF);
+    LowPower.powerDown(SLEEP_FOREVER, ADC_OFF, BOD_OFF);
     // delay(1000);
   }
 }
